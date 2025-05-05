@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FLUX.1 Image Generator</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #121218;
+      color: white;
+      text-align: center;
+      padding: 2rem;
+    }
+    input, button {
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin: 0.5rem;
+      border-radius: 8px;
+      border: none;
+    }
+    input {
+      width: 60%;
+    }
+    .param-input {
+      width: 150px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #preview {
+      margin-top: 2rem;
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+      display: none;
+    }
+    #loading {
+      display: none;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🖼️ FLUX.1 Image Generator</h1>
+  
+  <input type="text" id="prompt" placeholder="Describe your image..." /><br>
+  <input type="number" class="param-input" id="seed" placeholder="Seed (optional)" />
+  <input type="number" class="param-input" id="creativity" placeholder="Creativity (1-20)" /><br>
+  <button onclick="generateImage()">Generate</button>
+  
+  <div id="loading">🎨 Generating...</div>
+  <img id="preview" />
+
+  <script>
+    async function query(data) {
+      const response = await fetch(
+        "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-dev",
+        {
+          headers: {
+            Authorization: "Bearer hf_xxxxxxxxxxxxxxxxxxxxxxxx", // <- Replace with your token!
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      );
+      const result = await response.blob();
+      return result;
+    }
+
+    async function generateImage() {
+      const prompt = document.getElementById("prompt").value.trim();
+      const seed = document.getElementById("seed").value.trim();
+      const creativity = document.getElementById("creativity").value.trim();
+
+      if (!prompt) {
+        alert("Please enter a prompt.");
+        return;
+      }
+
+      const params = {};
+      if (seed !== "") params.seed = parseInt(seed);
+      if (creativity !== "") params.guidance_scale = parseFloat(creativity);
+
+      document.getElementById("loading").style.display = "block";
+      document.getElementById("preview").style.display = "none";
+
+      try {
+        const imageBlob = await query({
+          inputs: prompt,
+          parameters: params
+        });
+
+        const imageUrl = URL.createObjectURL(imageBlob);
+        const img = document.getElementById("preview");
+        img.src = imageUrl;
+        img.style.display = "block";
+      } catch (err) {
+        console.error(err);
+        alert("Something went wrong. Check the console.");
+      } finally {
+        document.getElementById("loading").style.display = "none";
+      }
+    }
+  </script>
+
+</body>
+</html>
